@@ -1,0 +1,47 @@
+name: Refresh model prices
+
+on:
+  schedule:
+    # 08:00 UTC daily
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Refresh prices from LiteLLM
+        run: node scripts/refresh-prices.mjs
+
+      - name: Check for price changes
+        id: diff
+        # _refreshedAt always changes, so ignore it — only a real price/model
+        # diff should trigger a PR.
+        run: |
+          if git diff --ignore-matching-lines='_refreshedAt' --exit-code lib/model-prices.json > /dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            git checkout -- lib/model-prices.json
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR if prices changed
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Refresh model prices from LiteLLM"
+          title: "Refresh model prices from LiteLLM"
+          body: Automated daily refresh of `lib/model-prices.json` from LiteLLM's price list.
+          branch: automated/refresh-prices
+          delete-branch: true
+          add-paths: lib/model-prices.json
