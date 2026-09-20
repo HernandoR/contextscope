@@ -7,7 +7,7 @@ allowed-tools: Bash
 The user wants to open the contextscope dashboard. Run this **once** in a background bash invocation:
 
 ```bash
-npx @mbeato/contextscope ui --no-open > /tmp/contextscope.log 2>&1 &
+npx @hernandor/contextscope ui --no-open > /tmp/contextscope.log 2>&1 &
 sleep 2
 grep "running on" /tmp/contextscope.log | tail -1
 ```
@@ -16,6 +16,6 @@ Then tell the user:
 - the URL printed above
 - they can stop it with `pkill -f contextscope` when finished
 
-If `npx @mbeato/contextscope` is not installed, tell the user to install with `npm install -g @mbeato/contextscope` and try again.
+If `npx @hernandor/contextscope` is not installed, tell the user to install with `npm install -g @hernandor/contextscope` and try again.
 
 Do not analyze the dashboard yourself — it's a UI for the user.

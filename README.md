@@ -7,7 +7,7 @@ A CLI + local dashboard that audits the **per-turn token context** Claude Code l
 ## Quick look (CLI)
 
 ```bash
-npx @mbeato/contextscope
+npx @hernandor/contextscope
 ```
 
 Prints a 30-day audit to stdout in ~3s. Per-turn baseline, 30-day burn + API-equivalent cost, top disable candidates, context overhead. No browser, no server.
@@ -15,7 +15,7 @@ Prints a 30-day audit to stdout in ~3s. Per-turn baseline, 30-day burn + API-equ
 ## Full dashboard (browser)
 
 ```bash
-npx @mbeato/contextscope ui
+npx @hernandor/contextscope ui
 ```
 
 Picks a free port starting at 3939, opens your browser. Adds: toggle-to-disable buttons, per-session drilldown, daily burn graph, by-project breakdown, hook + MCP detail.
@@ -23,7 +23,7 @@ Picks a free port starting at 3939, opens your browser. Adds: toggle-to-disable 
 Or install globally so the `contextscope` command stays around:
 
 ```bash
-npm install -g @mbeato/contextscope
+npm install -g @hernandor/contextscope
 contextscope        # quick CLI summary
 contextscope ui     # dashboard
 ```
@@ -87,6 +87,37 @@ npm run prod      # build + start in production mode — ~0.6s warm reload
 ```
 
 Requires Node 18+. macOS/Linux paths; Windows untested but uses `os.homedir()` throughout.
+
+## Releasing
+
+Publishing to npm is automated via [`.github/workflows/publish.yml`](.github/workflows/publish.yml), triggered by pushing a `v*` tag:
+
+1. Bump `version` in `package.json` (PR + merge to `main` as usual).
+2. Tag the merge commit and push the tag:
+   ```bash
+   git tag v0.4.4
+   git push origin v0.4.4
+   ```
+3. The workflow checks out the tag, verifies the tag version matches `package.json`, runs `npm ci`, and publishes with `npm publish --provenance` (which runs `prepublishOnly` → `next build`). Authentication uses npm's [**Trusted Publishing**](https://docs.npmjs.com/trusted-publishers) (OIDC) — no long-lived token is stored in GitHub.
+
+**One-time setup:** npm's Trusted Publisher can only be registered on a package that already exists on the registry, so the very first publish has to be done manually; every release after that goes through CI.
+
+1. First publish (local, one-time) — copy `.env.publish.example` to `.env.publish`, fill in a personal `NPM_TOKEN`, then:
+   ```bash
+   npm run release
+   ```
+2. On the newly-created package's npm settings page (`https://www.npmjs.com/package/@hernandor/contextscope/access`), add a **Trusted Publisher** for GitHub Actions:
+   - Organization or user: `HernandoR`
+   - Repository: `contextscope`
+   - Workflow filename: `publish.yml`
+   - Environment: leave blank
+3. Delete `.env.publish` / revoke that npm token once Trusted Publishing is confirmed working — it was only needed to bootstrap the package.
+
+From then on, releases are just:
+```bash
+git tag v0.4.4
+git push origin v0.4.4
+```
 
 ## Architecture
 

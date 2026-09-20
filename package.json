@@ -1,5 +1,5 @@
 {
-  "name": "@mbeato/contextscope",
+  "name": "@hernandor/contextscope",
   "version": "0.4.3",
   "description": "Local dashboard auditing Claude Code's per-turn token context (skills, agents, commands, CLAUDE.md, MEMORY.md, hooks, MCP) with toggle-based disable and session analytics.",
   "type": "module",
@@ -42,11 +42,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mbeato/contextscope.git"
+    "url": "git+https://github.com/HernandoR/contextscope.git"
   },
-  "homepage": "https://github.com/mbeato/contextscope#readme",
+  "homepage": "https://github.com/HernandoR/contextscope#readme",
   "bugs": {
-    "url": "https://github.com/mbeato/contextscope/issues"
+    "url": "https://github.com/HernandoR/contextscope/issues"
   },
   "engines": {
     "node": ">=18.18"
