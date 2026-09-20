@@ -371,7 +371,7 @@ export default async function Cockpit({
             cl100k_base · scans main + subagent jsonls · deduped per (msg.id, requestid) · 1hr cache priced separately at 2x 5min rate · toggles apply on next cc restart
           </span>
           <a
-            href="https://github.com/mbeato/contextscope"
+            href="https://github.com/HernandoR/contextscope"
             className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
             github →
