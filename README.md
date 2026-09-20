@@ -133,6 +133,10 @@ git push origin v0.4.4
 - **`bin/cli.js`** — CLI entry: routes to `summary.js` (default) or launches the Next.js dashboard (`ui` subcommand)
 - **`bin/summary.js`** — pure-JS CLI summary; mirrors the lib/* logic without Next.js for the fast first-impression printout
 
+## Credits
+
+Originally created by [Maximus Beato](https://github.com/mbeato) as [`mbeato/contextscope`](https://github.com/mbeato/contextscope). This fork is maintained at `@hernandor/contextscope` under the same MIT license; see [LICENSE](LICENSE) for the original copyright notice.
+
 ## License
 
 MIT
