@@ -1,5 +1,6 @@
 {
   "_source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+  "_supplementalSource": "https://platform.claude.com/docs/en/about-claude/pricing (Fable 5.1 and Opus 5.5 verified 2026-09-22)",
   "_refreshedAt": "2026-09-20T04:27:28.294Z",
   "_description": "Anthropic model prices in USD per token (input, output, cache_read, cache_creation 5min default). Refresh with `npm run refresh-prices`.",
   "models": {
@@ -191,6 +192,13 @@
       "cache_read": 3e-7,
       "cache_creation_5m": 0.00000375,
       "cache_creation_1h": 0.000006
+    },
+    "claude-opus-5-5": {
+      "input": 0.000004,
+      "output": 0.00002,
+      "cache_read": 2e-7,
+      "cache_creation_5m": 0.000005,
+      "cache_creation_1h": 0.000008
     },
     "claude-sonnet-5": {
       "input": 0.000002,
