@@ -1,13 +1,31 @@
 name: Publish to npm
 
+# package.json is the source of truth for the release version. Every push to
+# main publishes that version if npm does not have it yet, then tags the commit
+# v<version>. Bump the version in the PR (the daily price-refresh PR does this
+# itself), or run this workflow manually with a bump level to bump, commit and
+# publish in one go.
+#
+# Keep this filename: npm's Trusted Publisher is registered for publish.yml.
+
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Bump package.json before publishing (none = publish the current version)"
+        type: choice
+        options: [none, patch, minor, major]
+        default: none
 
 permissions:
-  contents: read
+  contents: write # bump commit + release tag
   id-token: write # required for npm Trusted Publishing (OIDC)
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -22,17 +40,48 @@ jobs:
           node-version: 24 # ships npm >= 11.5.1, required for Trusted Publishing
           registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify tag matches package.json version
+      - name: Configure git
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "Tag version ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
-            exit 1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'none'
+        run: |
+          npm version "${{ inputs.bump }}" --no-git-tag-version
+          VERSION="$(node -p "require('./package.json').version")"
+          git commit -am "chore(release): v$VERSION"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Check whether this version is already on npm
+        id: check
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          PUBLISHED="$(npm view "$NAME@$VERSION" version 2>/dev/null || true)"
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "$NAME@$VERSION is already on npm; nothing to publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install dependencies
+        if: steps.check.outputs.publish == 'true'
+        run: npm ci
+
       - name: Publish
+        if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance
+
+      - name: Tag release
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          TAG="v${{ steps.check.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::warning::Tag $TAG already exists; leaving it as is."
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi

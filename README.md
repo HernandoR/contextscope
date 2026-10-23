@@ -90,15 +90,13 @@ Requires Node 18+. macOS/Linux paths; Windows untested but uses `os.homedir()` t
 
 ## Releasing
 
-Publishing to npm is automated via [`.github/workflows/publish.yml`](.github/workflows/publish.yml), triggered by pushing a `v*` tag:
+Publishing to npm is automated via [`.github/workflows/publish.yml`](.github/workflows/publish.yml). The `version` in `package.json` is the source of truth; do not push tags by hand.
 
-1. Bump `version` in `package.json` (PR + merge to `main` as usual).
-2. Tag the merge commit and push the tag:
-   ```bash
-   git tag v0.4.4
-   git push origin v0.4.4
-   ```
-3. The workflow checks out the tag, verifies the tag version matches `package.json`, runs `npm ci`, and publishes with `npm publish --provenance` (which runs `prepublishOnly` → `next build`). Authentication uses npm's [**Trusted Publishing**](https://docs.npmjs.com/trusted-publishers) (OIDC) — no long-lived token is stored in GitHub.
+- **On every push to `main`**, the workflow checks whether npm already has the `package.json` version. If not, it runs `npm ci`, publishes with `npm publish --provenance` (which runs `prepublishOnly` → `next build`), and tags the commit `v<version>`. A merge that does not change the version publishes nothing.
+- **Daily price refresh:** the `automated/refresh-prices` PR bumps the patch version itself, so merging it ships the new prices.
+- **Other changes:** bump `version` in the PR (`npm version patch --no-git-tag-version`), or after merging run the **Publish to npm** workflow manually with a `patch` / `minor` / `major` bump. That run commits the bump to `main` and publishes it.
+
+Authentication uses npm's [**Trusted Publishing**](https://docs.npmjs.com/trusted-publishers) (OIDC) — no long-lived token is stored in GitHub.
 
 **One-time setup:** npm's Trusted Publisher can only be registered on a package that already exists on the registry, so the very first publish has to be done manually; every release after that goes through CI.
 
@@ -113,11 +111,7 @@ Publishing to npm is automated via [`.github/workflows/publish.yml`](.github/wor
    - Environment: leave blank
 3. Delete `.env.publish` / revoke that npm token once Trusted Publishing is confirmed working — it was only needed to bootstrap the package.
 
-From then on, releases are just:
-```bash
-git tag v0.4.4
-git push origin v0.4.4
-```
+From then on, releases happen on merge to `main` as described above.
 
 ## Architecture
 
