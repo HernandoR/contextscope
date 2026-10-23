@@ -3,13 +3,15 @@
  * Refresh lib/model-prices.json from LiteLLM's authoritative price list.
  *
  * Pulls https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json,
- * keeps only Anthropic models with the cost fields we use, and writes a pruned
- * JSON to lib/model-prices.json. Run before each contextscope release so npm
- * users get current prices.
+ * keeps only Anthropic models with the cost fields we use, and merges them into
+ * lib/model-prices.json. Models already in the file are never removed (LiteLLM
+ * drops retired models, but old sessions still need their prices); LiteLLM
+ * values win for any model it lists. Metadata keys (e.g. _supplementalSource)
+ * are preserved.
  *
  * Usage: node scripts/refresh-prices.mjs
  */
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -23,6 +25,13 @@ if (!res.ok) {
   process.exit(1);
 }
 const all = await res.json();
+
+let existing = { models: {} };
+try {
+  existing = JSON.parse(await readFile(DST, "utf8"));
+} catch (err) {
+  if (err.code !== "ENOENT") throw err;
+}
 
 const pruned = {};
 for (const [name, m] of Object.entries(all)) {
@@ -40,11 +49,13 @@ for (const [name, m] of Object.entries(all)) {
   };
 }
 
-const sorted = Object.fromEntries(Object.entries(pruned).sort(([a], [b]) => a.localeCompare(b)));
+const merged = { ...existing.models, ...pruned };
+const sorted = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
 await writeFile(
   DST,
   JSON.stringify(
     {
+      ...existing,
       _source: SRC,
       _refreshedAt: new Date().toISOString(),
       _description: "Anthropic model prices in USD per token (input, output, cache_read, cache_creation 5min default). Refresh with `npm run refresh-prices`.",
@@ -55,4 +66,4 @@ await writeFile(
   ) + "\n",
   "utf8"
 );
-console.log(`wrote ${Object.keys(sorted).length} anthropic models → ${DST}`);
+console.log(`wrote ${Object.keys(sorted).length} anthropic models (${Object.keys(pruned).length} from LiteLLM) → ${DST}`);
