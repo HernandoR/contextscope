@@ -45,3 +45,4 @@ jobs:
           branch: automated/refresh-prices
           delete-branch: true
           add-paths: lib/model-prices.json
+          reviewers: ${{ github.repository_owner }}
